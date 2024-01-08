@@ -6,8 +6,9 @@ namespace DigitalWallet.Services
 {
     internal class WalletService
     {
-        IRepository<Wallet> _walletRepo;
-        public WalletService(IRepository<Wallet> accountRepo)
+        IRepository<Wallet, int> _walletRepo;
+
+        public WalletService(IRepository<Wallet, int> accountRepo)
         {
             _walletRepo = accountRepo;
         }
@@ -15,13 +16,13 @@ namespace DigitalWallet.Services
         public void CreateWallet(User user, double amount)
         {
             Wallet wallet = new Wallet(user, amount);
-            
+
             _walletRepo.Add(wallet);
-            
+
             Console.WriteLine("Account created for user " + user.Name + " with account number " + wallet.AccountNumber);
         }
 
-        public void Transfer(int fromAccNum, int toAccNum, double transferAmount)
+        public void Transfer(int fromAccNum, int toAccNum, double transferAmount, OfferManagement offerManagement)
         {
             if (!Validate(fromAccNum, toAccNum, transferAmount))
             {
@@ -32,7 +33,7 @@ namespace DigitalWallet.Services
             Wallet toAccount = _walletRepo.Get(toAccNum);
 
             Transaction tran = new Transaction(fromAccount, toAccount, transferAmount);
-            
+
             if (fromAccount.Balance < transferAmount)
             {
                 Console.WriteLine("Insufficient Balance");
@@ -44,7 +45,8 @@ namespace DigitalWallet.Services
             fromAccount.AddTransaction(tran);
             toAccount.AddTransaction(tran);
 
-            
+            offerManagement.ApplyOffersOnTransaction(tran);
+
             Console.WriteLine("Transfer Successful");
         }
 
@@ -55,6 +57,7 @@ namespace DigitalWallet.Services
                 Console.WriteLine("Sender and Receiver cannot be same.");
                 return false;
             }
+
             if (transferAmount < 0.0001)
             {
                 Console.WriteLine("Amount too low");
@@ -62,19 +65,19 @@ namespace DigitalWallet.Services
             }
 
             var fromAcc = _walletRepo.Get(fromAccNum);
-            if (fromAcc == null)
+            if (fromAcc == null || fromAcc == Wallet.Default)
             {
                 Console.WriteLine("Invalid Sender account number");
                 return false;
             }
-            
+
             var toAcc = _walletRepo.Get(toAccNum);
             if (toAcc == null)
             {
                 Console.WriteLine("Invalid Receiver account number");
                 return false;
             }
-            
+
             return true;
         }
 
@@ -102,6 +105,18 @@ namespace DigitalWallet.Services
                 Console.WriteLine("Balance for account number " + acc.AccountNumber + ": ");
                 Console.WriteLine(acc.Balance);
             }
+        }
+
+        public void CreditOfferAmount(int toAccNum, double offerAmount, Offer offer)
+        {
+            var toWallet = _walletRepo.Get(toAccNum);
+            if (toWallet == null)
+            {
+                Console.WriteLine("Invalid receiver account number");
+                return;
+            }
+
+            toWallet.CreditOfferAmount(offerAmount);
         }
     }
 }

@@ -7,12 +7,13 @@ using System.Threading.Tasks;
 
 namespace DigitalWallet.Data
 {
-    internal class WalletRepository : IRepository<Wallet>
+    internal class WalletRepository : IRepository<Wallet, int>
     {
         List<Wallet> _wallets;
         public WalletRepository()
         {
-            _wallets = new List<Wallet>();    
+            _wallets = new List<Wallet>();
+            _wallets.Add(Wallet.Default);
         }
 
         public void Add(Wallet entity)

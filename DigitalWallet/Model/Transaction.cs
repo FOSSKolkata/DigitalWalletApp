@@ -55,6 +55,9 @@ namespace DigitalWallet.Model
 
         public override string ToString()
         {
+            if(_fromWallet == Wallet.Default)
+                return "Offer credit [to=" + _toWallet.AccountNumber + ", amount=" + _amount + ", date=" + _createdOn + "]";
+            
             return "Transaction [from=" + _fromWallet.AccountNumber + ", to=" + _toWallet.AccountNumber + ", amount=" + _amount + ", date=" + _createdOn + "]";
         }
 
