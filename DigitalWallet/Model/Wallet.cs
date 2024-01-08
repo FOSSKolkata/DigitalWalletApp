@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace DigitalWallet.Model
 {
@@ -15,6 +17,8 @@ namespace DigitalWallet.Model
         private User _user;
         private double _balance;
         private HashSet<Transaction> _transactions;
+
+        public static Wallet Default = new Wallet(new User("Google"), 1000000000);  
         public Wallet(User user, double amount)
         {
             this._accountNumber = AccountNumberGenerator.GetNextAccountNumber();
@@ -71,6 +75,17 @@ namespace DigitalWallet.Model
                 throw new ArgumentException("Transation does not belong to the wallet");
 
             _transactions.Add(transaction);
+        }
+
+        public void CreditOfferAmount(double offerAmount)
+        {
+            if (offerAmount <= 0)
+                throw new ArgumentNullException("Invalid offer amount");
+
+            Transaction offerCredit = new Transaction(Wallet.Default, this, offerAmount);
+
+            this._balance += offerCredit.Amount;
+            this._transactions.Add(offerCredit);
         }
     }
 }

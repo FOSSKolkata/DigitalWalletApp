@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DigitalWallet.Data
 {
-    internal interface IRepository<T> where T : class
+    internal interface IRepository<T, TId> where T : class
     {
-        T Get(int id);
+        T Get(TId id);
 
         List<T> GetAll();
 

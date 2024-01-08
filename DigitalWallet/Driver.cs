@@ -1,6 +1,7 @@
 ﻿using DigitalWallet.Data;
 using DigitalWallet.Model;
 using DigitalWallet.Services;
+using System.Runtime.CompilerServices;
 
 namespace DigitalWallet
 {
@@ -8,8 +9,11 @@ namespace DigitalWallet
     {
         static void Main(string[] args)
         {
-            WalletService wService = new WalletService(new WalletRepository());
-       
+            WalletRepository  walletRepo = new WalletRepository();
+            OfferRepository offerRepo = new OfferRepository();
+            WalletService wService = new WalletService(walletRepo);
+            SeedOffers(offerRepo);
+
             outer: while (true)
             {
                 Console.WriteLine("\nOPTIONS:");
@@ -36,7 +40,7 @@ namespace DigitalWallet
                         int to = Convert.ToInt32(Console.ReadLine());
                         Console.WriteLine("Enter amount");
                         double amount1 = Convert.ToDouble(Console.ReadLine());
-                        wService.Transfer(from, to, amount1);
+                        wService.Transfer(from, to, amount1, new OfferManagement(offerRepo, walletRepo, wService));
                         break;
                     case 3:
                         Console.WriteLine("YOU SELECTED ACCOUNT STATEMENT");
@@ -57,6 +61,16 @@ namespace DigitalWallet
                         break;
                 }
             }
+        }
+
+        static void SeedOffers(OfferRepository offerRepo)
+        {
+           
+            var offer1 = new Offer(1, "Offer1", OfferTrigger.OnTransaction);
+            var offer2 = new Offer(1, "Offer2", OfferTrigger.OnDemand);
+
+            offerRepo.Add(offer1);
+            offerRepo.Add(offer2);
         }
     }
 }
