@@ -5,20 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 using DigitalWallet.Model;
 
-namespace DigitalWallet.Services
+namespace DigitalWallet.Services.Offers.TransactionTriggered
 {
-    internal class Offer1Service
+    internal class Offer1Processor: TransactionTriggeredOfferProcessor
     {
-     
+
         private Wallet _wallet1;
         private Wallet _wallet2;
         private readonly WalletService _walletService;
 
-        public Offer1Service(WalletService walletService)
+        public Offer1Processor(WalletService walletService)
         {
             _walletService = walletService;
         }
-        private bool Validate()
+
+
+        protected override void SetDataRequiredForOfferProcessing(Transaction transaction)
+        {
+            _wallet1 = transaction.FromWallet;
+            _wallet2 = transaction.ToWallet;
+        }
+
+
+        protected override bool Validate()
         {
             if (_wallet1 == null)
             {
@@ -35,24 +44,15 @@ namespace DigitalWallet.Services
             return true;
         }
 
-        private bool CheckCondition()
+        protected override bool CheckCondition()
         {
             return _wallet1.Balance == _wallet2.Balance;
         }
-        public void ApplyOffer(Offer offer, Transaction transaction)
-        {
-            _wallet1 = transaction.FromWallet;
-            _wallet2 = transaction.ToWallet;
 
-            if (Validate())
-            {
-                bool conditionMet = CheckCondition();
-                if (conditionMet)
-                {
-                    _walletService.CreditOfferAmount(_wallet1.AccountNumber, 10, offer);
-                    _walletService.CreditOfferAmount(_wallet2.AccountNumber, 10, offer);
-                }
-            }
+        protected override void ApplyOffer(Offer offer)
+        {
+            _walletService.CreditOfferAmount(_wallet1.AccountNumber, 10, offer);
+            _walletService.CreditOfferAmount(_wallet2.AccountNumber, 10, offer);
         }
     }
 }
