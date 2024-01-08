@@ -1,6 +1,7 @@
 ﻿using DigitalWallet.Data;
 using DigitalWallet.Model;
 using DigitalWallet.Services;
+using DigitalWallet.Services.Offers;
 using System.Runtime.CompilerServices;
 
 namespace DigitalWallet
@@ -9,9 +10,11 @@ namespace DigitalWallet
     {
         static void Main(string[] args)
         {
-            WalletRepository  walletRepo = new WalletRepository();
+            WalletRepository walletRepo = new WalletRepository();
             OfferRepository offerRepo = new OfferRepository();
-            WalletService wService = new WalletService(walletRepo);
+            WalletService walletService = new WalletService(walletRepo);
+            OfferManagement offerManagement = new OfferManagement(offerRepo, walletRepo, walletService);
+            
             SeedOffers(offerRepo);
 
             outer: while (true)
@@ -19,9 +22,11 @@ namespace DigitalWallet
                 Console.WriteLine("\nOPTIONS:");
                 Console.WriteLine("1. Create wallet");
                 Console.WriteLine("2. Transfer Amount");
-                Console.WriteLine("3. Account Statement");
-                Console.WriteLine("4. Overview");
-                Console.WriteLine("5. Exit");
+                Console.WriteLine("3. Apply Offer");
+                Console.WriteLine("4. Start A Fixed Deposit");
+                Console.WriteLine("5. Account Statement");
+                Console.WriteLine("6. Overview");
+                Console.WriteLine("7. Exit");
                 switch (Convert.ToInt32(Console.ReadLine()))
                 {
                     case 1:
@@ -30,7 +35,7 @@ namespace DigitalWallet
                         String name = Console.ReadLine();
                         Console.WriteLine("Enter amount");
                         double amount = Convert.ToDouble(Console.ReadLine());
-                        wService.CreateWallet(new User(name), amount);
+                        walletService.CreateWallet(new User(name), amount);
                         break;
                     case 2:
                         Console.WriteLine("YOU SELECTED TRANSFER");
@@ -40,19 +45,33 @@ namespace DigitalWallet
                         int to = Convert.ToInt32(Console.ReadLine());
                         Console.WriteLine("Enter amount");
                         double amount1 = Convert.ToDouble(Console.ReadLine());
-                        wService.Transfer(from, to, amount1, new OfferManagement(offerRepo, walletRepo, wService));
+                        walletService.Transfer(from, to, amount1, offerManagement);
                         break;
                     case 3:
-                        Console.WriteLine("YOU SELECTED ACCOUNT STATEMENT");
-                        Console.WriteLine("Enter account num");
-                        wService.Statement(Convert.ToInt32(Console.ReadLine()));
+                        Console.WriteLine("YOU SELECTED APPLY OFFER");
+                        Console.WriteLine("Enter offer ID");
+                        int offerId = Convert.ToInt32(Console.ReadLine());
+                        offerManagement.ProcessOfferOnDemand(offerId);
                         break;
                     case 4:
+                        Console.WriteLine("YOU SELECTED START A FIXED DEPOSIT");
+                        Console.WriteLine("Enter account num");
+                        int accountNum = Convert.ToInt32(Console.ReadLine());
+                        Console.WriteLine("Enter deposit amount");
+                        double depositAmount = Convert.ToDouble(Console.ReadLine());
+                        walletService.StartAFixedDeposit(accountNum, depositAmount);    
+                        break;
+;                    case 5:
+                        Console.WriteLine("YOU SELECTED ACCOUNT STATEMENT");
+                        Console.WriteLine("Enter account num");
+                        walletService.Statement(Convert.ToInt32(Console.ReadLine()));
+                        break;
+                    case 6:
                         Console.WriteLine("YOU SELECTED OVERVIEW");
-                        wService.Overview();
+                        walletService.Overview();
                         break;
 
-                    case 5:
+                    case 7:
                         Console.WriteLine("APPLICATION STOPPED");
                         goto outer;
 
@@ -65,12 +84,14 @@ namespace DigitalWallet
 
         static void SeedOffers(OfferRepository offerRepo)
         {
-           
+
             var offer1 = new Offer(1, "Offer1", OfferTrigger.OnTransaction);
-            var offer2 = new Offer(1, "Offer2", OfferTrigger.OnDemand);
+            var offer2 = new Offer(2, "Offer2", OfferTrigger.OnDemand);
+            var fixedDepositOffer = new Offer(3, "FixedDepositOffer", OfferTrigger.OnTransaction);
 
             offerRepo.Add(offer1);
             offerRepo.Add(offer2);
+            offerRepo.Add(fixedDepositOffer);
         }
     }
 }

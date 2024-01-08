@@ -17,6 +17,9 @@ namespace DigitalWallet.Model
         private User _user;
         private double _balance;
         private HashSet<Transaction> _transactions;
+        private DateTime _createdOn;
+        private double? _fixedDepositAmount;
+        private DateTime? _fixedDepositCreatedOn; 
 
         public static Wallet Default = new Wallet(new User("Google"), 1000000000);  
         public Wallet(User user, double amount)
@@ -25,6 +28,7 @@ namespace DigitalWallet.Model
             this._user = user;
             this._balance = amount;
             this._transactions = new HashSet<Transaction>();
+            this._createdOn = DateTime.UtcNow;
         }
 
       
@@ -59,6 +63,23 @@ namespace DigitalWallet.Model
             }
         }
 
+        public double? FixedDepositAmount
+        {
+            get
+            {
+                return _fixedDepositAmount;
+            }
+        } 
+
+        public DateTime? FixedDepositCreatedOn
+        {
+            get { return _fixedDepositCreatedOn; }
+        }
+
+        public DateTime CreatedOn { 
+            get => _createdOn;
+        }
+
         public override String ToString()
         {
             return "Wallet [accountNumber=" + _accountNumber + ", name=" + this._user.Name + ", balance=" + _balance
@@ -74,6 +95,9 @@ namespace DigitalWallet.Model
             if (transaction.FromWallet != this && transaction.ToWallet != this)
                 throw new ArgumentException("Transation does not belong to the wallet");
 
+            if (transaction.FromWallet.Balance < transaction.Amount)
+                throw new ArgumentException("Insufficient Balance");
+
             _transactions.Add(transaction);
         }
 
@@ -86,6 +110,21 @@ namespace DigitalWallet.Model
 
             this._balance += offerCredit.Amount;
             this._transactions.Add(offerCredit);
+        }
+
+        public void StartFixedDeposit(double depositAmount)
+        {
+            if (depositAmount > _balance)
+                throw new ArgumentException("Insufficient Balance");
+
+            _fixedDepositAmount = depositAmount;
+            _fixedDepositCreatedOn = DateTime.UtcNow;
+        }
+
+        internal void DissolveFixedDeposit()
+        {
+            _fixedDepositAmount = null;
+            _fixedDepositCreatedOn = null;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using DigitalWallet.Data;
 using DigitalWallet.Model;
-
+using DigitalWallet.Services.Offers;
 
 namespace DigitalWallet.Services
 {
@@ -45,7 +45,13 @@ namespace DigitalWallet.Services
             fromAccount.AddTransaction(tran);
             toAccount.AddTransaction(tran);
 
-            offerManagement.ApplyOffersOnTransaction(tran);
+            if(fromAccount.FixedDepositAmount.HasValue 
+                && fromAccount.Balance < fromAccount.FixedDepositAmount)
+            {
+                fromAccount.DissolveFixedDeposit();
+            }
+
+            offerManagement.ProcessOffersOnTransaction(tran);
 
             Console.WriteLine("Transfer Successful");
         }
@@ -55,12 +61,6 @@ namespace DigitalWallet.Services
             if (fromAccNum == toAccNum)
             {
                 Console.WriteLine("Sender and Receiver cannot be same.");
-                return false;
-            }
-
-            if (transferAmount < 0.0001)
-            {
-                Console.WriteLine("Amount too low");
                 return false;
             }
 
@@ -78,7 +78,38 @@ namespace DigitalWallet.Services
                 return false;
             }
 
+            if (transferAmount < 0.0001)
+            {
+                Console.WriteLine("Amount too low");
+                return false;
+            }
+
+            if(transferAmount > fromAcc.Balance)
+            {
+                Console.WriteLine("Insufficient balance");
+            }
+
             return true;
+        }
+
+        public void StartAFixedDeposit(int accountNum, double amount)
+        {
+            Wallet account = _walletRepo.Get(accountNum);
+            if (account == null)
+            {
+                Console.WriteLine("Invalid Account Number");
+                return;
+            }
+
+            try
+            {
+                account.StartFixedDeposit(amount);
+                Console.WriteLine($"Started a fixed deposit of {amount} for account num {account.AccountNumber}");
+            }
+            catch(ArgumentException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         public void Statement(int accountNum)
@@ -91,7 +122,9 @@ namespace DigitalWallet.Services
             }
 
             Console.WriteLine("Summary for account number: " + accountNum);
-            Console.WriteLine("Current Balance: " + account.Balance);
+            if( account.FixedDepositAmount.HasValue)
+                Console.WriteLine("Fixed Deposit: " + account.FixedDepositAmount.Value.ToString());
+            Console.WriteLine("Total Current Balance: " + account.Balance);
             Console.WriteLine("Your Transaction History");
             foreach (var transaction in account.Transactions)
                 Console.WriteLine(transaction);
@@ -102,8 +135,11 @@ namespace DigitalWallet.Services
         {
             foreach (var acc in _walletRepo.GetAll())
             {
-                Console.WriteLine("Balance for account number " + acc.AccountNumber + ": ");
-                Console.WriteLine(acc.Balance);
+                Console.WriteLine("Total balance for account number " + acc.AccountNumber + ": ");
+                Console.Write(acc.Balance + " ");
+                if (acc.FixedDepositAmount.HasValue)
+                    Console.Write("that include a fixed deposit of amount: " + acc.FixedDepositAmount);
+                Console.WriteLine();
             }
         }
 
